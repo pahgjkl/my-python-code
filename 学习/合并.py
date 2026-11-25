@@ -9,4 +9,4 @@ audio = AudioFileClip('音频.mp3')
 final_video = video.set_audio(audio)
 
 # 4. 保存合成后的新视频
-final_video.write_videofile('完整视频.mp4')
+final_video.write_videofile('完整视频.mp4')  #123
