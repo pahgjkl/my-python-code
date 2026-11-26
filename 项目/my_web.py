@@ -1,62 +1,51 @@
 import streamlit as st
 import pandas as pd
-import io  # 用于在内存里处理文件
-from openpyxl import load_workbook
-from openpyxl.styles import Font, PatternFill, Alignment
-
-st.title("🏗️ 智能建造 - 自动化办公助手")
-st.write("欢迎使用！请上传你的原始 Excel 表格，系统将自动进行数据清洗和合并.---最终解释权由刘磊所有")
-
+import io
+st.set_page_config(page_title="万能办公助手", page_icon="🛠️", layout="wide")
+st.title("🛠️ 万能 Excel 自动化清洗工具")
+st.write("上传任意 Excel 表格，在这里自由进行去重、填空、排序和筛选！")
 uploaded_file = st.file_uploader("请选择你的 Excel 文件", type=["xlsx"])
-
 if uploaded_file is not None:
-    st.success("文件上传成功！正在处理...")
-
-    # 1. 读取数据
     df = pd.read_excel(uploaded_file)
-
-    st.subheader("📄 这是你的原始数据：")
-    st.dataframe(df)
-
-    try:
-        # 2. 清洗数据 (加了 try 防止报错让网页崩溃)
-        if "姓名" in df.columns:
-            df["姓名"] = df["姓名"].str.strip()
-
-        if "高数成绩" in df.columns:
-            df = df.sort_values(by="高数成绩", ascending=False)
-
-        st.subheader("✨ 经过 AI 清洗后的数据：")
-        # 3. 将处理好的数据存到内存里，供用户下载
-        # 因为网页不能直接把文件存到用户电脑上，必须提供下载按钮
+    col1, col2 = st.columns(1,2)
+    with (col1):
+        st.subheader("⚙️ 清洗选项")
+        if st.checkbox("去除完全重复的行"):
+            df = df.drop_duplicates()
+            st.success("已去重")
+        na_action = st.radio("处理空白格:", ["不处理", "删除有空白的行", "把空白填为0"])
+        if na_action == "删除有空白的行":
+                df = df.dropna()
+                st.success("已删除空白行")
+        elif na_action == "把空白填为0":
+                df = df.fillca(0)
+                st.success("已填充空值")
+        st.markdown("---")
+        st.subheader("排序与筛选")
+        columns = df.columns.tolist()
+        sort_col = st.selectbox("选择按哪一列排序：", ["不排序"] + columns)
+        if sort_col != "不排序":
+            sort_order = st.radio("排序方式：", ["降序 (从大到小)", "升序 (从小到大)"])
+            assending = True if "升序" in sort_order else False
+            df = df.sort_values(by=sort_col, ascending=assending)
+        st.markdown("---")
+        selected_cols = st.multiselect("选择你想要保留的列：", columns, default=columns)
+        if selected_cols:
+            df = df[selected_cols]
+    with col2:
+        st.subheader("✨ 实时处理结果")
+        # 网页上实时展示处理后的表格
+        st.dataframe(df, use_container_width=True)
+        st.markdown("---")
         output = io.BytesIO()
-        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        with pd.ExcelWriter(output, engine="openpyxl") as writer:
             df.to_excel(writer, index=False)
-        output.seek(0)
-        wb = load_workbook(output)
-        ws = wb.active
-        for cell in ws[1]:
-            cell.font = Font(bold=True)
-            cell.alignment = Alignment(horizontal="center")
-            cell.fill = PatternFill(start_color="00B0F0", end_color="00B0F0", fill_type='solid')
-        for row in ws.iter_rows(min_row=2):
-            score_cell = row[2]
-            if score_cell.value < 60:
-                score_cell.font = Font(color="FF0000", bold=True)
-        ws.column_dimensions["A"].width = 15
-        ws.column_dimensions["B"].width = 15
-        ws.column_dimensions["C"].width = 15
-        wb.save(output)
-        # 注意这里，展示的是 df 而不是 ws
-        st.dataframe(df)
-        excel_data = output.getvalue()
-        # 4. 在网页上生成一个下载按钮
+        excel_output = output.getvalue()
         st.download_button(
-            label="📥 点击下载处理好的 Excel",
-            data=excel_data,
-            file_name="清洗后的数据.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
+            label="",
+            data="",
+            file_name="",
+            mime="application/vnd.openxmlformats.spreadsheetml.sheet",
+            type="primary"
 
-    except Exception as e:
-        st.error(f"数据清洗时发生错误：{e}")
+        )
