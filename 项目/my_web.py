@@ -5,7 +5,7 @@ from openpyxl import load_workbook
 from openpyxl.styles import Font, PatternFill, Alignment
 
 st.title("🏗️ 智能建造 - 自动化办公助手")
-st.write("欢迎使用！请上传你的原始 Excel 表格，系统将自动进行数据清洗和合并。")
+st.write("欢迎使用！请上传你的原始 Excel 表格，系统将自动进行数据清洗和合并.---最终解释权由刘磊所有")
 
 uploaded_file = st.file_uploader("请选择你的 Excel 文件", type=["xlsx"])
 
