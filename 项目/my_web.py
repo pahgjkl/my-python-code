@@ -37,6 +37,49 @@ if uploaded_file is not None:
             for col in df.select_dtypes(include=['object']).columns:
                 df[col] = df[col].astype(str).str.strip()
             st.success("已清除首尾空格")
+        # ================= 终极通用功能 1：动态筛选 =================
+        st.markdown("---")
+        st.subheader("🔍 动态条件筛选")
+        st.caption("输入查询条件，例如：`高数成绩 > 80` 或 `班级 == '一班'`")
+        query_str = st.text_input("在此输入条件（不输入则不筛选）：", "")
+
+        if query_str:
+            try:
+                # 使用 Pandas 的 query 方法动态执行字符串公式
+                df = df.query(query_str)
+                st.success(f"筛选成功，剩余 {len(df)} 行数据")
+            except Exception as e:
+                st.error(f"查询语句写错啦，请检查列名和格式！错误：{e}")
+
+        # ================= 终极通用功能 2：自定义计算列 =================
+        st.markdown("---")
+        st.subheader("🧮 自定义计算新列")
+
+        # 必须重新获取一下列名，因为前面的操作可能把列删了
+        current_cols = df.columns.tolist()
+
+        c1, c2, c3 = st.columns([2, 1, 2])  # 把下拉框排成一行
+        with c1:
+            col_a = st.selectbox("选择第一列", ["不计算"] + current_cols, key="calc_a")
+        with c2:
+            op = st.selectbox("运算符", ["+", "-", "*", "/"], key="op")
+        with c3:
+            col_b = st.selectbox("选择第二列", ["不计算"] + current_cols, key="calc_b")
+
+        if col_a != "不计算" and col_b != "不计算":
+            try:
+                # 动态执行计算
+                if op == "+":
+                    df["计算结果"] = df[col_a] + df[col_b]
+                elif op == "-":
+                    df["计算结果"] = df[col_a] - df[col_b]
+                elif op == "*":
+                    df["计算结果"] = df[col_a] * df[col_b]
+                elif op == "/":
+                    df["计算结果"] = df[col_a] / df[col_b]
+                st.success(f"✅ 已生成新列【计算结果】 = {col_a} {op} {col_b}")
+            except Exception:
+                st.error("❌ 计算失败：请确保你选择的两列都是数字格式！")
     with (col2):
         st.subheader("✨ 实时处理结果")
         # 网页上实时展示处理后的表格
